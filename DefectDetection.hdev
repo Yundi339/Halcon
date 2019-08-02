@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>* 设置窗口大小</c>
+<l>dev_update_window ('off')</l>
+<l>dev_close_window ()</l>
+<l>dev_open_window (0, 0, 512, 512, 'black', WindowID)</l>
+<c></c>
+<c>* 遍历图片</c>
+<l>for index :=0 to 7 by 1</l>
+<l>    read_image (img, 'E:/python/graphics/origin/origin'+index$'1'+'.jpg')</l>
+<l>    get_image_size (img, img_Width, img_Height)</l>
+<c>    * 转灰度图</c>
+<l>    rgb1_to_gray(img, GrayImage)</l>
+<c>    * 高斯滤波</c>
+<l>    gauss_filter (GrayImage, ImageReduced, 3)</l>
+<c>    * 二值化</c>
+<l>    binary_threshold (ImageReduced, Region, 'max_separability', 'dark', UsedThreshold)</l>
+<c>    * 求连通域</c>
+<l>    connection (Region, ConnectedRegions)</l>
+<c>    * 筛选连通域</c>
+<l>    select_shape (ConnectedRegions, ConnectedRegions, 'area', 'and', img_Height*img_Width/10, img_Height*img_Width*3/4)</l>
+<l>    select_shape (ConnectedRegions, ConnectedRegions, 'row', 'and', img_Height/4, img_Height*3/4)</l>
+<l>    select_shape (ConnectedRegions, ConnectedRegions, 'column', 'and', img_Width/4, img_Width*3/4)</l>
+<l>    select_shape (ConnectedRegions, ConnectedRegions, 'height', 'and', img_Height/4, img_Height*3/4)</l>
+<l>    select_shape (ConnectedRegions, ConnectedRegions, 'width', 'and', img_Width/4, img_Width*3/4)</l>
+<c>    * 腐蚀</c>
+<l>    erosion_circle (ConnectedRegions, SelectedRegions, 11)</l>
+<c>    * 抠图</c>
+<l>    reduce_domain (GrayImage, SelectedRegions, ImageReduced)</l>
+<l>    dev_display(ImageReduced)</l>
+<l>    dyn_threshold (img, ImageReduced, DarkPixels, 1, 'dark')</l>
+<c></c>
+<l>    disp_continue_message (WindowID, 'black', 'true')</l>
+<l>    stop()</l>
+<l>    dev_clear_window()</l>
+<l>endfor</l>
+<c></c>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+<procedure name="open_zoom_window">
+<interface>
+<ic>
+<par name="RowPos" base_type="ctrl" dimension="0"/>
+<par name="ColPos" base_type="ctrl" dimension="0"/>
+<par name="RowROI1" base_type="ctrl" dimension="0"/>
+<par name="ColROI1" base_type="ctrl" dimension="0"/>
+<par name="RowROI2" base_type="ctrl" dimension="0"/>
+<par name="ColROI2" base_type="ctrl" dimension="0"/>
+<par name="ZoomFactor" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="WindowHandleZoom" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>dev_open_window (RowPos, ColPos, (ColROI2 - ColROI1) * ZoomFactor, (RowROI2 - RowROI1) * ZoomFactor, 'black', WindowHandleZoom)</l>
+<l>dev_set_part (round(RowROI1), round(ColROI1), round(RowROI2), round(ColROI2))</l>
+<l>return ()</l>
+</body>
+<docu id="open_zoom_window">
+<short lang="en_US">open window and set part</short>
+<short lang="zh_CN">open window and set part</short>
+<parameters>
+<parameter id="ColPos"/>
+<parameter id="ColROI1"/>
+<parameter id="ColROI2"/>
+<parameter id="RowPos"/>
+<parameter id="RowROI1"/>
+<parameter id="RowROI2"/>
+<parameter id="WindowHandleZoom"/>
+<parameter id="ZoomFactor"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="close_zoom_window">
+<interface>
+<ic>
+<par name="WindowHandleZoom" base_type="ctrl" dimension="0"/>
+<par name="FormerWidth" base_type="ctrl" dimension="0"/>
+<par name="FormerHeight" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>dev_set_window (WindowHandleZoom)</l>
+<l>dev_close_window ()</l>
+<l>dev_set_part (0, 0, FormerHeight - 1, FormerWidth - 1)</l>
+<l>return ()</l>
+</body>
+<docu id="close_zoom_window">
+<short lang="en_US">close zoom window and reset part</short>
+<short lang="zh_CN">close zoom window and reset part</short>
+<parameters>
+<parameter id="FormerHeight"/>
+<parameter id="FormerWidth"/>
+<parameter id="WindowHandleZoom"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="initial">
+<interface>
+<ic>
+<par name="Path" base_type="ctrl" dimension="0"/>
+<par name="flag" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="ModelID" base_type="ctrl" dimension="0"/>
+<par name="Width" base_type="ctrl" dimension="0"/>
+<par name="Height" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>read_image (ImageModel, Path)</l>
+<l>get_image_size (ImageModel, Width, Height)</l>
+<l>if (flag == 'true')</l>
+<c>    * 创建模板</c>
+<l>    create_shape_model (ImageModel, 'auto', 0, 6.29, 'auto', 'auto', 'use_polarity', 'auto', 'auto', ModelID)</l>
+<c>    * 保存模板</c>
+<l>    write_shape_model (ModelID, 'E:/modle1.shm')</l>
+<l>else</l>
+<c>    * 读入模板</c>
+<l>    read_shape_model ('E:/modle1.shm', ModelID)</l>
+<l>endif</l>
+</body>
+<docu id="initial">
+<parameters>
+<parameter id="Height"/>
+<parameter id="ModelID"/>
+<parameter id="Path">
+<default_type>string</default_type>
+<type_list>
+<item>string</item>
+</type_list>
+</parameter>
+<parameter id="Width"/>
+<parameter id="flag">
+<default_value>'false'</default_value>
+<multivalue>false</multivalue>
+<sem_type>string</sem_type>
+<type_list>
+<item>string</item>
+</type_list>
+<value_list>
+<item>'false'</item>
+<item>'true'</item>
+</value_list>
+</parameter>
+</parameters>
+</docu>
+</procedure>
+<procedure name="find_roi">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="ImagePart" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="model" base_type="ctrl" dimension="0"/>
+<par name="Height" base_type="ctrl" dimension="0"/>
+<par name="Width" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="flag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<c>* 匹配</c>
+<l>flag := 0</l>
+<l>find_shape_model (Image, model, 0, 6.29, 0.5, 1, 0.5, 'least_squares', 0, 0, Row_origin, Column_origin, Angle_origin, Score_origin)</l>
+<l>if(|Row_origin|==1)</l>
+<l>    flag := 2</l>
+<c>    * 旋转图片</c>
+<l>    rotate_image(Image, img_tmp, Angle_origin * -57.3248, 'constant')</l>
+<l>    find_shape_model (img_tmp, model, 0, 6.29, 0.5, 1, 0.5, 'least_squares', 0, 0, Row_tmp, Column_tmp, Angle_tmp, Score_tmp)</l>
+<l>    if(|Row_tmp|==1)</l>
+<l>        flag := 1</l>
+<l>        crop_part (img_tmp, ImagePart, Row_tmp-Height/2, Column_tmp-Width/2, Width, Height)</l>
+<l>    endif</l>
+<l>endif</l>
+</body>
+<docu id="find_roi">
+<parameters>
+<parameter id="Height"/>
+<parameter id="Image"/>
+<parameter id="ImagePart"/>
+<parameter id="Width"/>
+<parameter id="flag"/>
+<parameter id="model"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

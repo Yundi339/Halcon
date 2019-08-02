@@ -1,0 +1,63 @@
+find_roi(img, ImagePart, model, Height, Width, flag)
+{
+	* 匹配
+	flag := 0
+	find_shape_model (Image, model, 0, 6.29, 0.5, 1, 0.5, 'least_squares', 0, 0, Row_origin, Column_origin, Angle_origin, Score_origin)
+	if(|Row_origin|==1)
+		flag := 2
+		* 旋转图片
+		rotate_image(Image, img_tmp, Angle_origin * -57.3248, 'constant')
+		find_shape_model (img_tmp, model, 0, 6.29, 0.5, 1, 0.5, 'least_squares', 0, 0, Row_tmp, Column_tmp, Angle_tmp, Score_tmp)
+		if(|Row_tmp|==1)
+			flag := 1
+			crop_part (img_tmp, ImagePart, Row_tmp-Height/2, Column_tmp-Width/2, Width, Height)
+		endif
+	endif
+}
+
+initial (Path, 'false', model, Width, Height)
+{
+	read_image (ImageModel, Path)
+	get_image_size (ImageModel, Width, Height)
+	if (flag == 'true')
+		* 创建模板
+		create_shape_model (ImageModel, 'auto', 0, 6.29, 'auto', 'auto', 'use_polarity', 'auto', 'auto', ModelID)
+		* 保存模板
+		write_shape_model (ModelID, 'E:/modle1.shm')
+	else
+		* 读入模板
+		read_shape_model ('E:/modle1.shm', ModelID)
+	endif
+}
+
+
+main()
+{
+	Path := 'E:/python/graphics/origin/model.jpg'
+	* 初始化
+	initial (Path, 'false', model, Width, Height)
+	* 设置窗口大小
+	dev_close_window ()
+	dev_open_window (0, 0, Width/3, Height/3, 'black', WindowID)
+	disp_continue_message (WindowID, 'black', 'true')
+	stop()
+
+	* 遍历图片
+	for index :=0 to 7 by 1
+		read_image (img, 'E:/python/graphics/origin/origin'+index$'1'+'.jpg')
+		find_roi (img, ImagePart, model, Height, Width, flag)
+		if(flag==1)
+		   dev_display(ImagePart)
+		   rgb1_to_gray(ImagePart, GrayImage)
+		   gauss_filter (GrayImage, ImageGauss, 9)
+		   sobel_amp (ImageGauss, ImageSobel, 'thin_sum_abs', 9)
+		   binary_threshold (GrayImage, Region, 'max_separability', 'dark', UsedThreshold)
+		   region_to_bin(Region, BinImage, 255, 0, Width, Height)
+		   bit_and (ImageSobel, BinImage, Pretreatment)
+		   binary_threshold (Pretreatment, Region2, 'max_separability', 'light', UsedThreshold)		   
+		endif
+	*     disp_continue_message (WindowID, 'black', 'true')
+		stop()
+	endfor
+}
+
